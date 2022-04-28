@@ -1,12 +1,10 @@
 ---
-title: "My title"
-subtitle: "My subtitle if needed"
+title: "A Brief Overview of Tabacco, Vaping and Cannabis Use in Canada"
 author: 
-  - First author
-  - Another author
-thanks: "Code and data are available at: LINK."
+  - Shenghui Qiao
+thanks: "Code and data are available at: https://github.com/qiaoshe1/STA304-Final-Paper.git"
 date: "`r format(Sys.time(), '%d %B %Y')`"
-abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
+abstract: "Use of tobacco, cannabis and other addictive products has always been an important but controversial social topic. This report analyzes public use of cigarettes, vaping and cannabis in Canada based on the data collected in the national Canadian Tobacco and Nicotine Survey (CTNS). Results showed that respondent's personal conditions including gender and age, as well as information of respondent's first usage of these addictive products - age of respondent and type of product at the first usage - are important in determining whether this respondent is likely to be a smoker or vaper now. These findings may have great significance for future policy makers in regulating and controlling addictive products. \\par \\textbf{Keywords:} tobacco, nicotine, cannabis use, Canada, Canadian Tobacco and Nicotine Survey (CTNS), health, society and community"
 output:
   bookdown::pdf_document2
 toc: FALSE
@@ -14,80 +12,656 @@ bibliography: references.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, fig.pos = "H", out.extra = "")
 
 library(tidyverse)
-library(palmerpenguins)
+library(knitr)
+library(reshape2)
+library(janitor)
+library(kableExtra)
+library(patchwork)
+library(lme4)
+library(lmtest)
 ```
 
 # Introduction
 
-You can and should cross-reference sections and sub-sections. For instance, Section \@ref(data). R Markdown automatically makes the sections lower case and adds a dash to spaces to generate labels, for instance, Section \@ref(first-discussion-point). 
+Appropriate control of addictive products has always been an important issue in society. As early as in 1997, government of Canada enacted the Tobacco Act in response to the national public health problem posed by tobacco use. In May 2018, the new Tobacco and Vaping Products Act (TVPA) retained key components from the former act, and further regulated the manufacture, sale, labelling and promotion of tobacco and vaping products sold in Canada (@citeTVPA). The TVPA created a new legal framework that protects the health of Canadians, especially young persons, from tobacco related disease. However, later in the same year, access to cannabis was legalized by the Cannabis Act, which provided more freedom of smokers and other addicts. Statistics showed that by 2019, 16.8% of Canadians aged 15 or older reported use of cannabis, which is 1.9% higher than the percentile in 2018 before cannabis legalization (@citeRotermann).
 
+While more and more people are using tobacco, nicotine or cannabis plant as a relief from stress, concern and opposition to these addictive products exist all the time. Research showed that tobacco has causal relationship to some serious lung-related diseases, such as lung, colon or rectal cancers. In the United States, over 400,000 deaths could be attributed to tobacco smoke each year (@citeRobert). Similarly, according to Health Canada, use of cannabis may cause symptoms including confusion, fatigue, ability impairment, anxiety, and lung infections (@citeHealthCanada). Besides, cannabis abuse is regarded as the second primary factor of causing bipolar disorder (BD), which is one of the most serious psychiatric disorders in terms of morbidity and mortality (@citeCahill).
+
+Analysis of data reveals that most people started smoking or vaping at an early age of 15-19. Findings about the frequency of usage show that a large proportion of people have a daily consumption of these addictive products - 76.77% consumes cigarettes daily, about one half of respondent reports vaping daily, and 38.76% smokes cannabis every day. Besides, while cigarette is preferred by elder age groups, young people tend to use more vaping or cannabis. The interrelation among cigarette, vaping and cannabis is also investigated. An important reason that people started vaping is to either cut down smoking cigarette or to try quit smoking. This could be because a large proportion of people perceive the harm of vaping the same as, or less than the harm of cigarette. People's preference of pure cannabis and tobacco-cannabis mixture is also investigated, however, tobacco-cannabis does not turn out to be more attractive than pure cannabis. 
+
+A generalized linear model (GLM) is chosen to investigate what factors potentially affect the respondent's choice of becoming a user of cigarette, vaping product or cannabis. Results showed that gender, age, first product that respondent tried, and the age when the respondent used cigarette, vaping product or cannabist for the first time are statistically significant in determining the respondent's status of smoking (vaping) or not. 
+
+This report aims to provide a brief overview of the use of tobacco, vaping products and cannabis in Canada. It also provides critical commentary on the data collection and survey methodology. All the analysis will be based on the 2020 Canadian Tobacco and Nicotine Survey (CTNS) conducted by the Statistics Canada. Section \@ref(data) provides an overview of the data set and comments on the data collection. Section \@ref(model) builds a model based on response variable and certain predictors. Section \@ref(results) presents results and section \@ref(discussion) presents discussions of these findings, as well as limitations and future directions of the study. Finally, section \@ref(appendix) includes important enhancement to the study. 
 
 
 # Data
 
-Our data is of penguins (Figure \@ref(fig:bills)).
 
-```{r bills, fig.cap="Bills of penguins", echo = FALSE}
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = FALSE) +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
+```{r include = FALSE}
+data <- read.csv(file = "CTNS_clean.csv")
 ```
 
-Talk more about it.
+The data set is from the Public Use Microdata File (PUMF) of the Canada Tobacco and Nicotine Survey (CTNS) conducted by Statistics Canada in 2020 (@citeCTNS). Statistics Canada conducted CNTS on the behalf of Health Canada in order to fill the important information gap of vaping, cannabis, and tobacco usage in Canada. The CTNS data includes information of several topics - the prevalence of cigarette smoking, vaping, cannabis use, alcohol use, as well as some basic information of the respondents. This report will analyze frequencies of smoking, vaping and cannabis use and potential factors which influence these frequencies. 
 
-Also bills and their average (Figure \@ref(fig:billssssss)). (Notice how you can change the height and width so they don't take the whole page?)
+The data set contains answers from 8112 respondents who are aged 15 years and older across 10 provinces. Answers are collected through an electronic questionnaire or telephone interview. In total, the data set has 99 variables, each corresponds to respondent's answer to one question. Variables that are informative on a larger scale are kept, such as age of respondent when he/she started using tobacco products or cannabis, frequency of smoking or vaping in the last 30 days, number of times tried quit smoking, etc. Variables related to respondents' background information such as gender, age and provice are also included. Because this report aims to provide an overview of each addictive product's usage in Canada, some variables that are too specific are dropped, such as number of cigarettes smoked or vaped in each day. These would likely be redundant for the purpose of this report. In the original data set, answers are coded by numbers. In the cleaning process, I changed the variable names and uncoded answers with the *CTNS Data Dictionary book* in order to make the new data set more informative and easy for people to understand.
 
-```{r billssssss, fig.cap="More bills of penguins", echo = FALSE, fig.width=8, fig.height=4}
+Figure \@ref(fig:background) shows the distribution of some background information of the 8112 respondents who took part in the survey. The number of female and male respondents are very close, meaning that this survey avoids potential bias on selecting gender of respondents.However, table \@ref(tab:tab1) further shows that although the overall number of female respondent is slightly larger than that of male respondents, the number of male who reported usage of cigarettes, vaping products and cannabis is actually higher than number of female in all three categories. That is, a higher proportion of male would report usage than female does. In all 3876 male respondents, `r round(1889/3876, 4) * 100`% smoked cigarettes, `r round(901/3876, 4) * 100`% vaped, and `r round(1632/3876, 4) * 100`% smoked cannabis; while these proportions of female are `r round(1752/4236, 4) * 100`%, `r round(710/4236, 4) * 100`% and `r round(1508/4236, 4) * 100`% respectively. 
 
-# This needs to be about the random data tha tI sasmpled?
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = FALSE) +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
+Figure \@ref(fig:background) also shows that most respondents of this survey are aged 65 and older, while least people are in the 25-34 age group. Number of respondents in all other age groups are about 1000. The distribution of age group does not show any pattern, but because one age group has much more respondents than other groups, this inclination may have an effect on the analysis of frequency of usage. Simlarly, table \@ref(tab:tab2) is created to show the relation between age groups and number of people who smoked or vaped. The age group with most people smoked cigarettes is 65 and older - in 1912 respondents in this age group, 1206 of them smoked cigarettes (`r round(1206/1912, 4) * 100`%). We can also observe a clear tendency of youth usage of vaping products and cannabis, as the age group 20-24 years old reported most people vaping and smoking cannabis. Furthermore, table \@ref(tab:tab2) shows that elder people have a preference of smoking cigarettes, while young people tend to use vaping products. However, cannabis seems to be equally attractive to all ages.
+
+The bottom two plots in figure \@ref(fig:background) show province that respondent is from and the first product that the respondent tried. A large proportion of respondents are from either Ontario or Quebec, while there are fewer people from other provinces. This may introduce sampling bias to the further analysis of usage across Canada because the data set has too many observations from the same group that is province. Lastly, the most popular product that people try first is cigerattes. Among all 2709 people who have tried cigarettes, vaping or cannabis, 1870 of them started from smoking cigarettes. That is, cigarettes is the first tried product for `r round(1870/2709, 4) * 100`% of smokers based on this survey. 
+
+
+```{r fig.cap = "\\label{fig:background}Background Information of Respondents", echo=FALSE, warning=FALSE, message=FALSE}
+plot1 <- data %>% 
+  ggplot(aes(x = gender)) +
+  geom_histogram(stat = "count", fill = "pink", colour = "black") +
+  theme_bw() +
+  labs(title="Gender")
+
+plot2 <- data %>% 
+  ggplot(aes(x = age)) +
+  geom_histogram(stat = "count", fill = "pink", colour = "black") +
+  theme_bw() +
+  labs(title = "Age Group") + 
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, size = 7))
+
+plot3 <- data %>% 
+  ggplot(aes(x = province)) +
+  geom_histogram(stat = "count", fill = "pink", colour = "black") +
+  theme_bw() +
+  labs(title = "Province") +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, size = 7))
+
+plot4 <- data %>% 
+  filter(first_product != "Valid skip") %>% 
+  ggplot(aes(x = first_product)) +
+  geom_histogram(stat = "count", fill = "pink", colour = "black") +
+  theme_bw() +
+  labs(title = "First Product",
+       x = "first product") +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, size = 7))
+
+
+patchwork <- (plot1 | plot2) / (plot3 + plot4)
+patchwork
 ```
 
-Talk way more about it. 
+```{r tab1, echo=FALSE, warning=FALSE, message=FALSE}
+tab1_1 <- data %>% 
+  group_by(gender) %>% 
+  filter(smoked_cigarettes == "Yes") %>% 
+  count(smoked_cigarettes) %>% 
+  drop_na()
 
+tab1_2 <- data %>% 
+  group_by(gender) %>% 
+  filter(vaped == "Yes") %>% 
+  count(vaped) %>% 
+  drop_na()
+
+tab1_3 <- data %>% 
+  group_by(gender) %>% 
+  filter(smoked_cannabis == "Yes") %>% 
+  count(smoked_cannabis) %>% 
+  drop_na()
+
+tab1 <- merge(tab1_1, tab1_2, by = "gender") %>% 
+  merge(tab1_3) %>% 
+  t() 
+
+row.names(tab1) <- c("gender", "drop1", "number of people smoked cigarettes", "drop2", "number of people vaped", "drop3", "number of people smoked cannabis")
+
+tab1 <- tab1[-c(2,4,6), ]
+
+knitr::kable(tab1, caption = "Number of People Smoked Ciarettes, Vaped and Smoked Cannabis by Gender", booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "HOLD_position"))
+```
+
+```{r tab2, echo=FALSE, warning=FALSE, message=FALSE}
+tab2_1 <- data %>% 
+  group_by(age) %>% 
+  filter(smoked_cigarettes == "Yes") %>% 
+  count(smoked_cigarettes) %>% 
+  drop_na()
+
+tab2_2 <- data %>% 
+  group_by(age) %>% 
+  filter(vaped == "Yes") %>% 
+  count(vaped) %>% 
+  drop_na()
+
+tab2_3 <- data %>% 
+  group_by(age) %>% 
+  filter(smoked_cannabis == "Yes") %>% 
+  count(smoked_cannabis) %>% 
+  drop_na()
+
+tab2 <- merge(tab2_1, tab2_2, by = "age") %>% 
+  merge(tab2_3) %>% 
+  t() 
+
+row.names(tab2) <- c("age", "drop1", "number of people smoked cigarettes", "drop2", "number of people vaped", "drop3", "number of people smoked cannabis")
+
+tab2 <- tab2[-c(2,4,6), ]
+
+knitr::kable(tab2, caption = "Number of People Smoked Ciarettes, Vaped and Smoked Cannabis by Age", booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "scale_down", "HOLD_position"))
+```
+
+
+Throughout the report, We used R to conduct our analysis (@citeR). R packages `tidyverse` [@citetidyverse], `knitr` [@citeknitr], `reshape2` [@citereshape2], `janitor`[@citejanitor], `kableExtra` [@citekableExtra], `patchwork` [@citepatchwork], `lme4` [@citelme4], and `lmtest` [@citelmtest] are used for data cleaning, analysis and discussion.
+
+
+# Survey Methodology
+
+The target population of CTNS survey is non-institutionalized persons aged 15 years or older, living in Canada, who are not members of collectives or living on reserves. In total, 8112 respondents across all 10 provinces took part in the survey. They represent a weighted total of 31.3 million Canadian residents who are over 15 years old. The process of data collection lasted six weeks. It commenced on December 8th, 2020, and ended January 16th, 2021. 
+
+The survey was conducted through electronic questionnaires, which is designed by Statistics Canada in consultation with Health Canada, or telephone follow-up interviews. Data are collected directly from survey respondents and on a voluntary basis. The questionnaires are divided into several different sessions, each containing related questions. These sessions are age-order selection (AOS), demographics (DEM and DEM2), gender (GDR), tobacco (TBC), other tobacco product status (OTP), vaping (VAP), cannabis (CAN), initial use (IU), alcohol (ALC), and feedback (FDB). Among them, age-order selection, demographics and gender include questions of respondent’s background information; tobacco, other tobacco product status, vaping and cannabis concern the frequency, reason and variability of respondent’s usage; initial use, alcohol and feedback provide extra information to the survey and gather comments from the participants. 
+
+To detect and avoid error in the survey, the “raw” electronic survey file which contains the completed respondent survey records were created. Before further processing, verification was performed to identify and eliminate potential duplicate records and to drop non-response and out-of-scope records. At the cleaning and verification stage, further editing was performed to identify errors, remove empty records and invalid data, and format remaining data. 
+
+Each region who participated in the survey adopted a uniform, cross-sectional sample design which included a systematic, stratified sample. The CTNS sample has a one-stage design for persons who are 15 to 24 years old, and a two-stage design for persons who are 25 years old and older - the first stage being the dwelling and the second stage being the person. Also, the stratification method is different based on the age groups. For the 15-24 years old, the frame was stratified by age group and province, and sample was selected independently within each age group and province. And for the 25 years old and older, the frame was stratified by province, and a simple random sample of dwellings was selected independently within each province. 
+
+All content in this session are from CTNS description and summary by Statistics Canada (@citeCTNS, @citeCTNSsummary).
 
 
 # Model
 
+
+```{r include = FALSE}
+model_data <- data %>% 
+  transmute(gender, age, province, age_first_time_cigarettes, freq_cigarettes_30_days, age_first_time_vape, freq_vaped_30_days, age_first_time_cannabis, freq_cannabis_30_days, first_product, freq_alcohol_30_days) 
+
+model_data <- model_data %>% 
+  mutate(smoke_cigarette = case_when(
+    freq_cigarettes_30_days == "Not at all" ~ 0,
+    freq_cigarettes_30_days == "Valid skip" ~ 0,
+    freq_cigarettes_30_days != "Not at all" ~ 1),
+    vape = case_when(
+      freq_vaped_30_days == "Not at all" ~ 0,
+      freq_vaped_30_days == "Valid skip" ~ 0,
+      freq_vaped_30_days != "Not at all" ~ 1),
+    smoke_cannabis = case_when(
+    freq_cannabis_30_days == "Not at all" ~ 0,
+    freq_cannabis_30_days == "Valid skip" ~ 0,
+    freq_cannabis_30_days != "Not at all" ~ 1)
+  )
+
+model_data <- model_data %>% 
+  mutate(gender = case_when(
+    gender == "Male" ~ 0, 
+    gender == "Female" ~ 1),
+    province = case_when(
+    province == "Nova Scotia" ~ 1,
+    province == "British Columbia" ~ 2,
+    province == "New Brunswick" ~ 3,
+    province == "Prince Edward Island" ~ 4,
+    province == "Quebec" ~ 5,
+    province == "Alberta" ~ 6,
+    province == "Saskatchewan" ~ 7,
+    province == "Manitoba" ~ 8,
+    province == "Ontario" ~ 9,
+    province == "Newfoundland and Labrador" ~ 10),
+    age = case_when(
+      age == "15-19" ~ 1,
+      age == "20-24" ~ 2,
+      age == "25-34" ~ 3,
+      age == "35-44" ~ 4,
+      age == "45-54" ~ 5,
+      age == "55-64" ~ 6,
+      age == "65 and older" ~ 7),
+    age_first_time_cigarettes = case_when(
+      age_first_time_cigarettes == "0-9" ~ 1,
+      age_first_time_cigarettes == "10-14" ~ 2, 
+      age_first_time_cigarettes == "15-19" ~ 3,
+      age_first_time_cigarettes == "20-24" ~ 4,
+      age_first_time_cigarettes == "25-29" ~ 5,
+      age_first_time_cigarettes == "30-34" ~ 6,
+      age_first_time_cigarettes == "35-39" ~ 7,
+      age_first_time_cigarettes == "40 and over" ~ 8,
+      age_first_time_cigarettes == "Valid skip" ~ 9,
+      age_first_time_cigarettes == "Not stated" ~ 10),
+    age_first_time_vape = case_when(
+      age_first_time_vape == "10-14" ~ 2, 
+      age_first_time_vape == "15-19" ~ 3,
+      age_first_time_vape == "20-24" ~ 4,
+      age_first_time_vape == "25-29" ~ 5,
+      age_first_time_vape == "30-34" ~ 6,
+      age_first_time_vape == "35-39" ~ 7,
+      age_first_time_vape == "40-44" ~ 8,
+      age_first_time_vape == "45-49" ~ 9,
+      age_first_time_vape == "50-54" ~ 10,
+      age_first_time_vape == "55-59" ~ 11,
+      age_first_time_vape == "60-64" ~ 12,
+      age_first_time_vape == "65 and over" ~ 13,
+      age_first_time_vape == "Valid skip" ~ 14,
+      age_first_time_vape == "Not stated" ~ 15),
+    age_first_time_cannabis = case_when(
+      age_first_time_cannabis == "0-9" ~ 1,
+      age_first_time_cannabis == "10-14" ~ 2, 
+      age_first_time_cannabis == "15-19" ~ 3,
+      age_first_time_cannabis == "20-24" ~ 4,
+      age_first_time_cannabis == "25-29" ~ 5,
+      age_first_time_cannabis == "30-34" ~ 6,
+      age_first_time_cannabis == "35-39" ~ 7,
+      age_first_time_cannabis == "40-44" ~ 8,
+      age_first_time_cannabis == "45-49" ~ 9,
+      age_first_time_cannabis == "50 and over" ~ 10,
+      age_first_time_cannabis == "Valid skip" ~ 11,
+      age_first_time_cannabis == "Not stated" ~ 12),
+    freq_alcohol_30_days = case_when(
+      freq_alcohol_30_days == "Not at all" ~ 1,
+      freq_alcohol_30_days == "Daily" ~ 2,
+      freq_alcohol_30_days == "At least once a week" ~ 3,
+      freq_alcohol_30_days == "Less than once a week, but at least once in the past month" ~ 4,
+      freq_alcohol_30_days == "Not stated" ~ 5),
+    first_product = case_when(
+      first_product == "Cigarette" ~ 1,
+      first_product == "An e-cigarette or vaping device" ~ 2,
+      first_product == "Cannabis" ~ 3,
+      first_product == "Valid skip" ~ 4,
+      first_product == "Not stated" ~ 5)
+    )
+```
+
+
+This report wants to investigate what factors have an effect on people's decision of using cigarette, vaping product, and cannabis. Respondents are divided into category of "smokers" and "non-smokers" based on their frequency of smoking or vaping in past 30 days. We thus have a binary outcome. And the model relies on binomial logistic regression. 
+
+The model assumes that:
+
 \begin{equation}
-Pr(\theta | y) = \frac{Pr(y | \theta) Pr(\theta)}{Pr(y)}  (\#eq:bayes)
+P(Y = 1 | X_k) = \frac{exp(\beta_0 + \beta_1 X_1 + ... \beta_k X_k + ... + \beta_n X_n)}{1 + exp(\beta_0 + \beta_1 X_1 + ... \beta_k X_k + ... + \beta_n X_n)}  (\#eq:binomial)
 \end{equation}
 
-Equation \@ref(eq:bayes) seems useful, eh?
+where: 
 
-Here's a dumb example of how to use some references: In paper we run our analysis in `R` [@citeR]. We also use the `tidyverse` which was written by @thereferencecanbewhatever If we were interested in baseball data then @citeLahman could be useful. 
+* Y is the binary response that indicates whether the respondent used cigarette, vaping, or cannabis in the past 30 days;
 
-We can use maths by including latex between dollar signs, for instance $\theta$.
+* $X_k$ is predictors or independent variables;
+
+* $\beta_0$ is y-intercept; 
+
+* Other $\beta_k$ is the coefficient for each corresponding predictor;
+
+* n is number of predictors.
+
+The model estimates the probability P of the outcome variable Y to be successful given the predictor variable(s) $X_k$. Cigarette, vaping, and cannabis are treated as three independent cases, and have different response variables. The binary response variables for every model are created based on variable "frequency of smoking cigarettes (vaping/smoking cannabis)". If the answer to frequency of smoking is "Not at all" or a "Valid skip", this respondent is identified as a non-smoker; in contrast, if the respondent reported smoking or vaping at least once in the past month, he or she is identified as a smoker or vaper. 
+
+The independent variables for these three cases are the same, which are age, gender, province, age when respondent started smoking or vaping, first product that respondent tried, and frequency of drinking alcohol in the past 30 days. These independent variables capture background information of the respondent, early effect of first product and age started smoking/vaping, as well as the effect of alcohol. Because these predictors are categorical, dummy variables are also used to represent each option of answer, so that the modelling will be simpler. For example, the age group "15-19" is expressed as 1 and "20-24" is expressed as 2. Note that for any product, its model will include predictors of age that the respondent tried the other products only. For instance, model of cigarette includes variable `age_first_time_vaped` and `age_first_time_cannabis`, as we want to see whether the usage of vaping and cannabis affect usage of cigarette. In contrast, variable `age_first_time_cigerette` will not be included in this model, because this variable explicitly indicates that the respondent is a smoker. 
+
+Observations in our data set are independent from each other because they are from different individuals. Also, our preferred response type is binomial. Therefore, a generalized linear model (GLM) would fit our data. This type of model provides some flexibility for the non-linear response type, but is a good fit because the observations do not have any grouping. For each case of cigarette, vaping and cannabis, three models are built. These 3 models are nested; they have the same response but different predictors. 
+
+For instance, in case of cigarette:
+
+Model 1_1: predictors are gender, age, and province
+
+Model 1_2: predictors are gender, age, province, age when first tried smoking, and first product
+
+Model 1_3: predictors are gender, age, province, age when first tried smoking, first product, and frequency of alcohol usage in past 30 days
+
+```{r include = FALSE}
+mod1_1 <- glm(smoke_cigarette ~ gender + age + province, family = binomial(link = "logit"), data = model_data)
+
+mod1_2 <- glm(smoke_cigarette ~ gender + age + province + age_first_time_vape + age_first_time_cannabis + first_product, family = binomial(link = "logit"), data = model_data)
+
+mod1_3 <- glm(smoke_cigarette ~ gender + age + province + age_first_time_vape + age_first_time_cannabis + first_product + freq_alcohol_30_days, family = binomial(link = "logit"), data = model_data)
+```
+
+
+With ANOVA test and likelihood ratio test, I compared these three models using cigarette as response. The results for ANOVA are shown in table \@ref(tab:anova) and likelihood ratio test are shown in table \@ref(tab:lrtest)
+
+
+```{r anova, echo=FALSE, warning=FALSE, message=FALSE}
+a1 <- data.frame(anova(mod1_1))
+a2 <- data.frame(anova(mod1_2))
+a3 <- data.frame(anova(mod1_3))
+
+anova_results <- data.frame(cbind(c("Intercept", "Gender", "Age", "Province", "Intercept", "Gender", "Age", "Province", "Age first time vape", "Age firt time smoke cannabis", "First product", "Intercept", "Gender", "Age", "Province", "Age first time vape", "Age firt time smoke cannabis", "First product", "Frequency of alcohol usage"), 
+                                  rbind(a1, a2, a3))) 
+colnames(anova_results) <- c("", "Df", "Deviance", "Resid. Df", "Resid. Deviance")
+row.names(anova_results) <- NULL
+
+knitr::kable(anova_results, caption = "ANOVA Results", booktabs = TRUE, digits = 2) %>%
+  kable_styling(latex_options = c("striped", "HOLD_position")) %>% 
+  pack_rows(., "Model 1_1", 1, 4) %>% 
+  pack_rows(., "Model 1_2", 5, 11) %>% 
+  pack_rows(., "Model 1_3", 12, 19)
+```
+
+```{r lrtest, echo=FALSE, warning=FALSE, message=FALSE}
+likelihood <- data.frame(lrtest(mod1_1, mod1_2, mod1_3))
+
+colnames(likelihood) <- c("X.Df", "Loglikelihood", "Df", "Chisq", "Pr(>F)")
+row.names(likelihood) <- c("Model 1_1", "Model 1_2", "Model 1_3")
+
+knitr::kable(likelihood, caption = "Likelihood Ratio Test Results", booktabs = TRUE, digits = 3) %>%
+  kable_styling(latex_options = c("striped", "HOLD_position"))
+```
+
+
+From the likelihood ratio test results, the second model suits best for our data. That is, the model with all predictors except for frequency of drinking alcohol. Applying these three models to the case of vaping and cannabis generated similar results. Therefore, model 2 will be our choice of final model.
+
+```{r include = FALSE}
+# Case of Vaping
+mod2_1 <- glm(vape ~ gender + age + province, family = binomial(link = "logit"), data = model_data)
+
+mod2_2 <- glm(vape ~ gender + age + province + age_first_time_cigarettes + age_first_time_cannabis + first_product, family = binomial(link = "logit"), data = model_data)
+
+mod2_3 <- glm(vape ~ gender + age + province + age_first_time_cigarettes + age_first_time_cannabis + first_product + freq_alcohol_30_days, family = binomial(link = "logit"), data = model_data)
+
+lrtest(mod2_1, mod2_2, mod2_3)
+
+# Case of Cannabis
+mod3_1 <- glm(smoke_cannabis ~ gender + age + province, family = binomial(link = "logit"), data = model_data)
+
+mod3_2 <- glm(smoke_cannabis ~ gender + age + province + age_first_time_cigarettes + age_first_time_vape + first_product, family = binomial(link = "logit"), data = model_data)
+
+mod3_3 <- glm(smoke_cannabis ~ gender + age + province + age_first_time_cigarettes + age_first_time_vape + first_product + freq_alcohol_30_days, family = binomial(link = "logit"), data = model_data)
+
+lrtest(mod3_1, mod3_2, mod3_3)
+```
+
+The composition equation of Model 2, which is our chosen model, looks like:
+
+$$log(Y) = \beta_0 + \beta_1*gender + \beta_2*age + \beta_3*province + \beta_4*age_1 + \beta_5 * age_2 + \beta_6*firstproduct$$
+where $age_1$ and $age_2$ are the age when respondent first try the other two products. For instance, when $Y$ is whether respondent smokes cigarettes, $age_1$ and $age_2$ are ages when respondent first try vaping and smoking cannabis. 
 
 
 # Results
 
+## Cigarettes 
+
+```{r include = FALSE}
+cigarettes <- data %>% 
+  transmute(smoked_cigarettes, age_first_time_cigarettes, freq_cigarettes_30_days, freq_little_cigars_30_days, freq_cigars_30_days, freq_tabacco_pipe_30_days, freq_chewing_tabacco_30_days, freq_tabacco_waterpipe_30_days, when_quit_smoking, num_try_stop_smoking, quit_smoking_by_vaping)
+
+cigarettes %>% 
+  filter(smoked_cigarettes == "Yes",
+         age_first_time_cigarettes == "15-19") 
+
+cigarettes %>% 
+  filter(smoked_cigarettes == "Yes",
+         age_first_time_cigarettes == "10-14") 
+```
+
+
+Among all 8112 respondents, 3644 of them had smoked cigarettes in the last 30 days of the survey, that is, `r round(3644/8112, 4) * 100`% of the population. As shown in figure \@ref(fig:cig1), `r round(1934/3644, 4) * 100`% of these people started smoking at an early age of 15-19 years old, and `r round(1022/3644, 4) * 100`% of them started smoking even younger, at an age of 10-14 years old. Youth use of tobacco therefore seems to be a crucial problem in Canada. Also, this results further confirms discovery of an early research in the United States which suggests that "nearly 9 out of 10 adults who smoke cigarettes daily first try smoking by age 18" (@citeDHHS). Compare to proportion of teenager smokers, people who start smoking at an elder age is significantly smaller. 
+
+```{r fig.cap = "\\label{fig:cig1}Histogram of Respondents' Age of First Smoking", echo=FALSE, warning=FALSE, message=FALSE,  fig.width = 10, fig.height = 5}
+cigarettes %>% 
+  filter(smoked_cigarettes == "Yes") %>% 
+  ggplot(aes(x = age_first_time_cigarettes)) +
+  geom_histogram(stat = "count", fill = "light blue", colour = "black") +
+  theme_bw() +
+  labs(x = "Age of first time smoking",
+       y = "Count") 
+```
+
+Among the 8112 respondents, a large proportion of them reported smoking at least one tobacco product in the past 30 days. As figure \@ref(fig:cig2) shows, the undoubtly most popular tobacco product to smokers is cigarette. Specifically, `r round(792/1050, 4) * 100`% of smokers smoked cigarettes recently. Cigars and little cigars are the second and third popular options, which make up `r round(93/1050, 4) * 100`% and `r round(62/1050, 4) * 100`% respectively. It is worth noticing that a majority (i.e. `r round(608/792, 4) * 100`%) of cigarette smokers would smoke every day, and `r round(35/62, 4) * 100`% of little cigar smokers also do this daily. However, none of the other tobacco products are consumed daily. Instead, we can see from figure \@ref(fig:cig2) that some people report usage of chewing tobacco, cigars, tobacco pipe or tobacco waterpipe at least once a week, but a majority of them would use these products less than once a week, but at least once in the past month. Compare to cigarettes and little cigars, other tobacco products are used by less people and consumed with a much lower frequency. 
+
+
+```{r fig.cap = "\\label{fig:cig2}Proportion of smoker and non-smoker, and frequency of smoking across different tobacco products", echo=FALSE, warning=FALSE, message=FALSE, fig.width = 10, fig.height = 5}
+freq <- cigarettes %>% 
+  select(-c(smoked_cigarettes, age_first_time_cigarettes, when_quit_smoking, num_try_stop_smoking, quit_smoking_by_vaping)) %>% 
+  as.data.frame() 
+  
+colnames(freq) <- c("Cigarettes", "Little Cigars", "Cigars", "Tobacco Pipe", "Chewing Tobacco", "Tobacco Waterpipe")
+
+freq1 <- freq %>% 
+  pivot_longer(cols = 1:6) %>% 
+  filter(value != "Valid skip" & value != "Not at all" & value != "Not stated")
+
+plot5 <- freq %>% 
+  mutate("Smoke or not" = case_when(
+    `Cigarettes` == "Not at all" & `Little Cigars` == "Not at all" & `Cigars` == "Not at all" & `Tobacco Pipe` == "Not at all" & `Chewing Tobacco` == "Not at all" & `Tobacco Waterpipe` == "Not at all" ~ "No",
+    TRUE ~ 'Yes') ) %>% 
+  ggplot(aes(x = `Smoke or not`)) +
+  geom_histogram(stat = "count", colour = "dark green", fill = "white")
+
+plot6 <- freq1 %>% 
+  ggplot(aes(x = name, fill = value)) +
+  geom_histogram(stat = "count") +
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = -40, hjust = 0.1)) +
+  labs(x = "Type of Tobacoo Products", 
+       y = "Frequency")
+
+plot5 + plot6
+```
+
+
+Lastly, figure \@ref(fig:cig3) shows the distribution of number of times one respondent tried to quit smoking by any method. Despite that there are other options for the question about when the respondent quit smoking - 1 to 2 years ago, 3 to 5 years ago, and more than 5 years ago - all respondents who answered this question stopped smoking only less than one year ago, based on our data. Among these people, `r round(23/84, 4) * 100`% of them quit smoking successfully in the first time. `r round(19/84, 4) * 100`% of people tried once, `r round(24/84, 4) * 100`% tried twice or three times, and `r round(18/84, 4) * 100`% tried 4 times or more. The addictiveness of nicotine in tobacco products make quitting smoking difficult. Thus, most people tried and failed at least once in quitting smoking before they succeed. 
+
+
+```{r fig.cap = "\\label{fig:cig3}Histogram of Number of Times Respondent Tried Quit Smoking", echo=FALSE, warning = FALSE, message = FALSE, fig.width = 10, fig.height = 5}
+cigarettes %>% 
+  filter(when_quit_smoking != "Valid skip" & when_quit_smoking != "Not stated") %>% 
+  filter(num_try_stop_smoking != "Valid skip" & num_try_stop_smoking != "Not stated") %>% 
+  ggplot(aes(x = num_try_stop_smoking, fill = when_quit_smoking)) +
+  geom_histogram(stat = "count") +
+  labs(x = "Number of times tried quit smoking", 
+       y = "Counts",
+       fill = "When respondent stoped smoking")
+```
+
+
+
+## Vaping
+
+```{r include = FALSE}
+vape <- data %>% 
+  transmute(vaped, age_first_time_vape, freq_vaped_30_days, main_reason_vaping, num_try_stop_vaping, harm_vaping)
+
+vape %>% 
+  filter(vaped == "Yes") %>% 
+  filter(age_first_time_vape == "15-19")
+
+vape %>% 
+  filter(vaped == "Yes") %>% 
+  filter(age_first_time_vape == "20-24")
+
+vape %>% 
+  filter(vaped == "Yes") %>% 
+  filter(age_first_time_vape == "10-14")
+```
+
+Among all respondents, `r round(1615/8112, 4) * 100`% of them has vaped in the past 30 days. Figure \@ref(fig:vape1) shows the distribution of respondents' age when they first tried vaping. Similar to the case of cigarettes, 649 respondents (`r round(649/1615, 4) * 100`% of vapers) were exposed to vaping at an early age of 15-19 years old. Besides, `r round(226/1615, 4) * 100`% and `r round(138/1615, 4) * 100`% of people who vaped started vaping at 20-24 and 10-14 years old, respectively. This reveals a vaping prevalence among teenagers and young people in Canada. As it is illegal to sell or provide vaping products to anyone under 18 (in some provinces, this age is increased to 19 or 21), the majority of youth obtained vaping products from social sources such as acquaintances, friends and family, rather than from retail (@citePreventing). Although Canada has a regulatory framework for vaping products, especially with a focus on preventing uptake by youth, the results of the CNTS data actually suggest a incompetence of this regulation, and more serious punishment should be promoted. It is also worth noticing that a small proportion of people started vaping at an elder age of 50-59 years old, mainly to cease smoking or to avoid returning to smoking. The main reason of vaping would further analyzed at the end of this section. 
+
+``` {r fig.cap = "\\label{fig:vape1}Histogram of Respondents' Age of First Vaping", echo=FALSE, warning = FALSE, message = FALSE,  fig.width = 10, fig.height = 5}
+vape %>% 
+  filter(vaped == "Yes") %>% 
+  ggplot(aes(x = age_first_time_vape)) +
+  geom_histogram(stat = "count", fill = "light blue", colour = "black") +
+  theme_bw() +
+  labs(x = "Age of first time vaping",
+       y = "Count")
+```
+
+As shown in figure \@ref(fig:vape2), `r round(1135/1614, 4) * 100`% of people did not vape in the past 30 days at all, which is a majority of respondents. Among those who vaped, about half of the sample - `r round(224/479, 4) * 100`% - vaped everyday, and the rest half vaped less frequently, either less than daily or less than once a week but at least once in the past month. Compare to the case of cigarettes, the number of vapers is smaller and the frequency of vaping products usage is also lower. Vaping thus seems less addictive or attractive to its users. 
+
+``` {r fig.cap = "\\label{fig:vape2}Frequency of Vaping in Past 30 Days", echo=FALSE, warning = FALSE, message = FALSE, fig.width = 4.5, fig.height = 4}
+vape %>% 
+  filter(vaped == "Yes") %>% 
+  filter(freq_vaped_30_days != "Not stated") %>% 
+  ggplot(aes(x = freq_vaped_30_days)) +
+  geom_histogram(stat = "count", fill = "light blue", colour = "black") +
+  theme_bw() +
+  labs(x = "Frequency of vaping in past 30 days",
+       y = "Count") +
+  theme(axis.text.x = element_text(angle = -30, hjust = 0.1))
+```
+
+
+Figure \@ref(fig:vape3) shows number of times that respondents tried to quit vaping and their perception of harms of vaping. These two variables have a casual relationship so they are plotted in the same figure. The distribution of number of times tried quit vaping in figure \@ref(fig:vape3) seems a bit "extreme", because most vapers either did not try quitting at all or tried four times or more in that month. While a large proportion (i.e. `r round(273/475, 4) * 100`%) of vapers tried zero times, there are `r round(95/475, 4) * 100`% of people have stopped vaping for one day or longer for 4 times or more because they want to quit vaping. Number of people who tried 1, 2 or 3 times are smaller. 
+
+Figure \@ref(fig:vape3) also states current vapers' perception of harm of vaping. About one quarter of respondents think the harm of vaping is about the same as cigarettes. `r round(693/1611, 4) * 100`% of people perceive vaping as either somewhat or much less harming than cigarette, which explains the reason why some people use vaping products as a replacement of cigarettes. `r round(230/1611, 4) * 100`% of respondents think vaping is either somewhat or much more harmful than cigarettes, but they did not stop vaping or replace vaping by other products. It is worth noticing that `r round(221/1611, 4) * 100`% of vapers actually don't know the harm of vaping or don't have a perception of how harmful it would be to their health. The results indicate that although to most people who are currently vaping, vaping is either same harmful as or less harmful than cigarettes, there is no consensus among the public. In fact, the harm of vaping on human body is still uncertain and is a controversial topic today. Besides, some vapers did not realize the negative effect of vaping at all. More research and publicity about vaping products and their effects are needed to clear the mystery. 
+
+
+```{r fig.cap = "\\label{fig:vape3}Number of Times Tried Quit Vaping and Respondent's Perception of Harm of Vaping", echo=FALSE, warning = FALSE, message = FALSE, fig.width = 10, fig.height = 5}
+plot7 <- vape %>% 
+  filter(vaped == "Yes") %>% 
+  filter(num_try_stop_vaping != "Valid skip" & num_try_stop_vaping != "Not stated") %>% 
+  ggplot(aes(x = num_try_stop_vaping)) +
+  geom_histogram(stat = "count", fill = "light pink", colour = "black") +
+  labs(x = "Number of times tried quit vaping", 
+       y = "Count")
+
+plot8 <- vape %>% 
+  filter(vaped == "Yes") %>% 
+  filter(harm_vaping != "Not stated") %>% 
+  ggplot(aes(x = harm_vaping)) +
+  geom_histogram(stat = "count", fill = "light pink", colour = "black") +
+  labs(x = "Respondents' perception of harm of vaping", 
+       y = "Count") +
+  theme(axis.text.x = element_text(angle = -30, hjust = 0.1)) +
+  scale_x_discrete(limits = c("Much less harmful than cigarettes", "Somewhat less harmful than cigarettes", "About the same as cigarettes", "Somewhat more harmful than cigarettes", "Much more harmful than cigarettes", "Don't know"))
+  
+plot7 + plot8
+```
+
+Lastly, figure \@ref(fig:vape4) shows the main reason of vaping usage. The most popoular reason of vaping is related to the smoking of cigarettes, and the results show that many people use vaping as an effective alternative of cigarette. In total, `r round(150/477, 4) * 100`% of people started vaping because they want to quit smoking cigarettes, to cut down on smoking cigarettes, to avoid returning to smoking cigarettes, or to use when cannot/not allowed to smoke cigarettes. To these people, usage of vaping is in fact an attempt to get rid of cigarettes, which may cause more harm to them. This further suggests that more information about the harm of cigarettes and vaping is needed. Other popular reasons of vaping are to reduce stress, to enjoy it, or to satisfy curiosity. And the proportion of respondents who choose these three options are `r round(96/477, 4) * 100`%, `r round(95/477, 4) * 100`% and `r round(85/477, 4) * 100`% respectively. Besides, `r round(51/477, 4) * 100`% of people vape because of other reasons. 
+
+
+```{r fig.cap = "\\label{fig:vape4}Main Reasons of Vaping", echo=FALSE, warning = FALSE, message = FALSE, fig.width = 6.5, fig.height = 5}
+vape %>% 
+  filter(main_reason_vaping != "Valid skip" & main_reason_vaping != "Not stated") %>% 
+  ggplot(aes(x = main_reason_vaping)) +
+  geom_histogram(stat = "count", fill = "violet", colour = "black") +
+  theme_bw() +
+  labs(x = "Main Reason of Vaping",
+       y = "Count") +
+  theme(axis.text.x = element_text(angle = -30, hjust = 0.1))
+```
+
+
+## Cannabis
+
+```{r include = FALSE}
+cannabis <- data %>% 
+  transmute(smoked_cannabis, age_first_time_cannabis, freq_cannabis_30_days, freq_cannabis_tobacco_mix_30_days)
+
+cannabis %>% 
+  filter(smoked_cannabis == "Yes") %>% 
+  filter(age_first_time_cannabis == "15-19")
+
+cannabis %>% 
+  filter(smoked_cannabis == "Yes") %>% 
+  filter(age_first_time_cannabis == "20-24")
+
+cannabis %>% 
+  filter(smoked_cannabis == "Yes") %>% 
+  filter(age_first_time_cannabis == "10-14")
+```
+
+In total, `r round(3144/8112, 4) * 100`% (i.e. 3144 people) of all respondents reported cannabis smoking in the last 30 days. More than half of the respondents (`r round(1867/3144, 4) * 100`%) first smoked cannabis at 15-19 years old. And similar to the case of cigarettes and vaping, the two age groups very likely to be exposed to cannabis were those aged 20-24 (`r round(518/3144, 4) * 100`%) and 10-14 (`r round(399/3144, 4) * 100`%). This finding further suggest the importance of regulating youth usage of tobacco and cannabis. The histogram is rightly skewed just like the histograms for cigeratte and vaping. As age increases, the number of people who started smoking cannabis decreases, and this is intuitive. 
+
+```{r fig.cap = "\\label{fig:can1}Histogram of Respondents' Age of First Smoking Cannabis", echo=FALSE, warning = FALSE, message = FALSE}
+cannabis %>% 
+  filter(smoked_cannabis == "Yes") %>% 
+  ggplot(aes(x = age_first_time_cannabis)) +
+  geom_histogram(stat = "count", fill = "light blue", colour = "black") +
+  theme_bw() +
+  labs(x = "Age of first time smoking cannabis",
+       y = "Count")
+```
+
+According to figure \@ref(fig:can2), `r round(705/874, 4) * 100`% of cannabis smokers smoke pure cannabis only, and `r round(169/874, 4) * 100`% smoke both pure cannabis and a tobacco-cannabis mixture. The pure cannabis product is still very popular, and the mixture product hasn't gained much attention from consumers. None of the respondents smoke only the tobacco-cannabis mixture. 
+
+The plot on the right of figure \@ref(fig:can2) shows the frequency of usage for cannabis and tobacco-cannabis mixture. It is worth noticing that all users of the tobacco-cannabis mixture are users of pure cannabis products, based on our finding above. The distribution of frequency of usage seems very balanced for both types of product, with each frequency makes up about one-third of the count. Specifically, `r round(316/1045, 4) * 100`% of people smoke cannabis or mixed product every day, `r round(301/1045, 4) * 100`% smoke less than daily, but at least once a week, and the rest `r round(428/1045, 4) * 100`% smokes less frequent, but at least once in the past month. From the figure, there is no obvious relationship between the frequency of smoking and the type of product. 
+
+```{r fig.cap = "\\label{fig:can2}Proportion of smoker and non-smoker, and frequency of smoking for pure and mixed cannabis", echo=FALSE, warning = FALSE, message = FALSE, fig.width = 10, fig.height = 5}
+freq2 <- cannabis %>% 
+  select(-c(smoked_cannabis, age_first_time_cannabis)) %>% 
+  as.data.frame() 
+  
+colnames(freq2) <- c("Cannabis", "Tobacco-Cannabis Mixture")
+
+freq3 <- freq2 %>% 
+  pivot_longer(cols = 1:2) %>% 
+  filter(value != "Valid skip" & value != "Not at all" & value != "Not stated")
+
+plot9 <- freq2 %>% 
+  filter(Cannabis != "Valid skip" & `Tobacco-Cannabis Mixture` != "Valid skip") %>% 
+  filter(Cannabis != "Not stated" & `Tobacco-Cannabis Mixture` != "Not stated") %>% 
+  mutate("Smoke cannabis or tobacco-cannabis mixture, or both" = case_when(
+    `Cannabis` != "Not at all" & `Tobacco-Cannabis Mixture` == "Not at all" ~ "Cannabis only",
+    `Tobacco-Cannabis Mixture` != "Not at all" & `Cannabis` == "Not at all" ~ "Tobacco-Cannbis Mixture only",
+    `Cannabis` != "Not at all" & `Tobacco-Cannabis Mixture` != "Not at all" ~ "Both",
+   `Cannabis` == "Not at all" & `Tobacco-Cannabis Mixture` == "Not at all" ~ "None") ) %>% 
+  ggplot(aes(x = `Smoke cannabis or tobacco-cannabis mixture, or both`)) +
+  geom_histogram(stat = "count", colour = "dark green", fill = "white")
+
+plot10 <- freq3 %>% 
+  ggplot(aes(x = name, fill = value)) +
+  geom_histogram(stat = "count") +
+  theme_bw() + 
+  labs(x = "Type of Cannabis Products", 
+       y = "Count",
+       fill = "Frequency")
+
+plot9 + plot10
+```
+
+
+
 # Discussion
 
-## First discussion point
+Based on our choice of model, we want to investigate what factors are most influencial on the respondent's usage of each product. The model for analysis looks like:
 
-If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
+$$log(Y) = \beta_0 + \beta_1*gender + \beta_2*age + \beta_3*province + \beta_4*age_1 + \beta_5 * age_2 + \beta_6*firstproduct$$
 
-## Second discussion point
+This model has six predictors in total, which are gender, age, province, ages when respondent first try other two products, and the first product respondent tried. Some factors could be more significant than others. To begin with, I created table \@ref(tab:correlation), which shows the correlation among variables. The rightest three columns, also most bottom three rows, `smoke_cigarette`, `vape` and `smoke_cannabis`, are our binary response variables; and all other variables are predictors. From table \@ref(tab:correlation), we may see that first product has a fairly strong relation to every response variables. Three variables of agea of first try of each product is less significant, but still have some significance on the respnose. Respondent's age also has some significance, though it does not have strong relation to any of the responses. Gender and province do not seem to have any significance or relation with the response, so we can hypothesize that these two are not important in the model as well. 
 
-## Third discussion point
+```{r correlation, echo=FALSE, warning=FALSE, message=FALSE}
+correlation <- model_data %>% 
+  transmute(gender, age, province, age_first_time_cigarettes, age_first_time_vape, age_first_time_cannabis, first_product, smoke_cigarette, vape, smoke_cannabis)
+
+res <- data.frame(cor(correlation, use = "complete.obs"))
+
+knitr::kable(round(res, 3), caption = "Correlation among variables", booktabs = TRUE, digits = 3) %>%
+  kable_styling(latex_options = c("striped", "scale_down", "HOLD_position"))
+```
+
+The summary of final model with response variable being `smoke_cigarette` is displayed in table \@ref(tab:mod1) below. As shown in the table, taking 0.05 as the threshold, `gender`, `age`, `age_first_time_vape` and `first_product` are statistically significant. They have very small p-values, indicating that we have strong evidence to reject the null hypothesis that this variable has no effect on observed outcome. According to this model, for each 1 unit increase in age (which means changing to an older age group as this is a categorical variable), the probability that respondent is a smoker will increase by 0.332. Similarly, each 1 unit decrease in age that respondent first tried vaping - that is, if respondent started vaping earlier - will lead to an increase of  0.163 in probability of being a smoker. Gender and first product have a negative relationship with the response because of the dummy variable assigned to each of them. Because male is assigned 0 and female is assigned 1, the coefficient -0.228 of gender actually indicates that males are more likely to be a smoker than females do. Also, variable first product is arranged in an order to "Cigarette", "An e-cigarette or vaping device", "Cannabis" ~ 3, "Valid skip", and "Not stated", where "Cigarette" is assigned to 1 and "Not stated" is assigned to 5. The coefficient -0.562 indicates a negative relationship between first product and response. Therefore, if the first product that respondent used is cigarette, then he or she is most likely to become a cigarette smoker. If this person started with vaping or cannabis, he or she is less likely to be a cigarette smoker. And if the answer is a valid skip or not stated, meaning that we are uncertain of the first product that respondent used, or the respondent has not used any of these product, then certainly this person is very unlikely to be a smoker of cigarette now.
+
+
+```{r mod1, echo=FALSE, warning=FALSE, message=FALSE}
+knitr::kable(round(summary(mod1_2)$coefficients, 3), caption = "Summary of Model for Cigarette", booktabs=TRUE) %>%
+  kable_styling(latex_options = c("striped", "HOLD_position"))
+```
+
+Similarly, table \@ref(tab:mod2) and \@ref(tab:mod3) display the summary of model when the response is vaping and cannabis, respectively. In the case of vaping, predictors `age`, `age_first_time_cigarettes`, `age_first_time_cannabis`, and `first_product` are statistically significant; while in the case of cannabis, predictors `gender`, `age`, `age_first_time_cigarettes`, `age_first_time_vape`, and `first_product` are statistically significant, according to their p-values. 
+
+Compare the results of model for all three products, gender has some statistical importance, but is not always significant. The coefficient of gender is negative in all three models, which means that males are more likely to use all three tobacco and cannabis product than females do. Age of respondent is very significant according to all three models. In case of cigarette, if the respondent is older, he or she is more likely to be a smoker. But in case of vaping and cannabis, younger people are more likely to use these products. This result is corresponding to Statistic Canada's findings that the prevalence of current cigarette smoking among young adults aged 15 to 19 was 3% (63,000) and aged 20 to 24 was 8% (201,000), but the prevalence of vaping among youth aged 15 to 19 and 20 to 24 were 35% (711,000) and 43% (1.0 million) respectively, and the prevalence of cannabis among the same age groups were 23% (471,000) and 52% (1.2 million) respectively (@citeCTNSsummary). Cigarette is more attractive to people in elder age groups while vaping and cannabis are preferred by young people. 
+
+Province or location does not seem to have any statistical importance in any of these models. The age when respondent started using any of cigarette, vaping products or cannabis, has significant effect on the response. Even the age when respondent tried vaping, for example, seems to have no direct casual relation to whether this person smokes cigarette currently, these two variables are closely connected. This is corresponding to Berry KM's previous study that "the use of e-cigarette and other non-cigarette tobacco products may increase the odds of cigarettes initiation and use, particularly among low-risk youths" (@citeBerry). Besides, a study of Allison N. Kristman-Valente discovered a reciprocal relationship between conventional cigarette smoking and marijuana use during adolescence, that increased cigarette smoking predicted increased marijuana use and vice versa (@citeKristman-Valente).
+
+Lastly, the first product that the respondent tried is very significant to his or her current status. Intuitively, there is a relation between type of first product and the respondent's choice of whether to become a smoker. For example, if the respondent has smoked cigarette before, he or she is more likely to continue smoking than those who did not smoke or tried other products. 
+
+```{r mod2, echo=FALSE, warning=FALSE, message=FALSE}
+knitr::kable(round(summary(mod2_2)$coefficients, 3), caption = "Summary of Model for Vaping", booktabs=TRUE) %>%
+  kable_styling(latex_options = c("striped", "HOLD_position"))
+```
+
+```{r mod3, echo=FALSE, warning=FALSE, message=FALSE}
+knitr::kable(round(summary(mod3_2)$coefficients, 3), caption = "Summary of Model for Cannabis", booktabs=TRUE) %>%
+  kable_styling(latex_options = c("striped", "HOLD_position"))
+```
+
+
 
 ## Weaknesses and next steps
 
-Weaknesses and next steps should also be included.
+Survey errors come from a variety of different sources. One dimension of survey error is sampling error. Sampling error is defined as the error that arises because an estimate is based on a sample rather than the entire population (@citeCTNS). Because it is nearly impossible to collect data of the entire population of Canada, the CTNS survey selects a sample of 8112 individuals from 10 provinces of Canada. However, as we mentioned in the data session, figure \@ref(fig:background) showed that a majority of respondents are from either Ontario or Quebec, which means the sampling would have some bias. A survey as large as the CTNS is bounded to have sampling error. Sampling error could be expressed in a form of confidence interval (@citeCTNS). According to data published by Statistic Canada, the approximate sampling error estimate of 95% confidence intervals for a proportion of 50% (Canada level) is 4.0%, and the estimate of 95% confidence intervals for a proportion of 10% (Canada level) is 2.5% (@citeCTNS). 
+
+Non-response bias and self-report bias may arise as well. The response rate for the Canadian Tobacco and Nicotine Survey was 41% (@citeCTNS). Although the survey estimates are adjusted to account for non-response through the survey weights, the non-responding households and persons may still lead to a bias in results. Self-report bias is a methodological problem that arises when researchers rely on asking people to describe their behaviours rather than measuring directly. People may not have given fully correct answers, perhaps because talking about their usage of addictive products may be uncomfortable for some people, given the society's perception of harm of these products. Since the questionnaire provides fixed responses to participants, some respondent may select options which are not their truly condition. 
+
+Furthermore, the data collection may encounter coverage errors. Coverage errors arise when there are differences between the target population and the observed population (@citeCTNS). The targe population is any person in Canada who is aged 15 or above, while the observed population is persons living in dwellings with mailable addresses on the frame. Approximately, 95% of the dwellings in Canada had mailable addresses. To the extent that the excluded population differs from the rest of the target population, the results may be biased (@citeCTNS). 
+
 
 \newpage
 
@@ -95,8 +669,145 @@ Weaknesses and next steps should also be included.
 
 # Appendix {-}
 
+Extract of the questions from @gebru2021datasheets
 
-# Additional details
+
+**Motivation**
+
+1. *For what purpose was the dataset created? Was there a specific task in mind? Was there a specific gap that needed to be filled? Please provide a description.*
+    - The Canada Tobacco and Nicotine Survey (CTNS) conducted by Statistics Canada in 2020. Statistics Canada conducted CNTS on the behalf of Health Canada in order to fill the important information gap of vaping, cannabis, and tobacco usage in Canada.
+2. *Who created the dataset (for example, which team, research group) and on behalf of which entity (for example, company, institution, organization)?*
+    - The dataset was created by Statistic Canada with consultation of Health Canada. 
+3. *Who funded the creation of the dataset? If there is an associated grant, please provide the name of the grantor and the grant name and number.*
+    - We took the dataset from the CTNS website where the final report is published. No funding was needed on our part.
+4. *Any other comments?*
+    - No, no other comments.
+
+**Composition**
+
+1. *What do the instances that comprise the dataset represent (for example, documents, photos, people, countries)? Are there multiple types of instances (for example, movies, users, and ratings; people and interactions between them; nodes and edges)? Please provide a description.*
+	- The instances that comprise the dataset represent the prevalence of usage of cigarettes, vaping products and cannabis among Canadian aged 15 and older.  All of the instances have to do with people and their personal information.
+2. *How many instances are there in total (of each type, if appropriate)?*
+	- 29 instances.
+3. *Does the dataset contain all possible instances or is it a sample (not necessarily random) of instances from a larger set? If the dataset is a sample, then what is the larger set? Is the sample representative of the larger set (for example, geographic coverage)? If so, please describe how this representativeness was validated/verified. If it is not representative of the larger set, please describe why not (for example, to cover a more diverse range of instances, because instances were withheld or unavailable).*
+	- The dataset has information on the prevalence of tobacco and nicotine usage among Canaidans aged 15 and older, and all of that information was important to our report, therefore the dataset contains all possible instances. 
+4. *What data does each instance consist of? "Raw" data (for example, unprocessed text or images) or features? In either case, please provide a description.*
+	- Each instance consists of the usages of cigarette, vaping product or cannabis, as well as some basic information of the respondent. 
+5. *Is there a label or target associated with each instance? If so, please provide a description.*
+	- There is no target associated with each instance.
+6. *Is any information missing from individual instances? If so, please provide a description, explaining why this information is missing (for example, because it was unavailable). This does not include intentionally removed information, but might include, for example, redacted text.*
+	-  There is no information missing from individual instances. 
+7. *Are relationships between individual instances made explicit (for example, users' movie ratings, social network links)? If so, please describe how these relationships are made explicit.*
+	- Relationships between individual instances is made explicit by graphing. The graphs highlight trends and differences between individual instances.
+8. *Are there recommended data splits (for example, training, development/validation, testing)? If so, please provide a description of these splits, explaining the rationale behind them.*
+	- No, there is no recommended data splits. 
+9. *Are there any errors, sources of noise, or redundancies in the dataset? If so, please provide a description.*
+	- There are no errors, sources of noise, or redundancies in the dataset.
+10. *Is the dataset self-contained, or does it link to or otherwise rely on external resources (for example, websites, tweets, other datasets)? If it links to or relies on external resources, a) are there guarantees that they will exist, and remain constant, over time; b) are there official archival versions of the complete dataset (that is, including the external resources as they existed at the time the dataset was created); c) are there any restrictions (for example, licenses, fees) associated with any of the external resources that might apply to a dataset consumer? Please provide descriptions of all external resources and any restrictions associated with them, as well as links or other access points, as appropriate.*
+	- This dataset is archived by the Statistic Canada, so since it is a government institution, there are guarantees that it will exist over time.
+	- There are official archival versions of the complete dataset.
+	- There are no licenses or fees that would restrict someone's access to any of the external resources.
+11. *Does the dataset contain data that might be considered confidential (for example, data that is protected by legal privilege or by doctor-patient confidentiality, data that includes the content of individuals' non-public communications)? If so, please provide a description.*
+	- Since the data is anonymous, it is not considered confidential.
+12. *Does the dataset contain data that, if viewed directly, might be offensive, insulting, threatening, or might otherwise cause anxiety? If so, please describe why.*
+	- The data is not offensive, insulting, threatening, and does not cause anxiety.
+13. *Does the dataset identify any sub-populations (for example, by age, gender)? If so, please describe how these subpopulations are identified and provide a description of their respective distributions within the dataset.*
+	- No. 
+14. *Is it possible to identify individuals (that is, one or more natural persons), either directly or indirectly (that is, in combination with other data) from the dataset? If so, please describe how.*
+	- It is impossible to identify individuals directly or indirectly from the dataset because all of the information that was collected was anonymous.
+15. *Does the dataset contain data that might be considered sensitive in any way (for example, data that reveals race or ethnic origins, sexual orientations, religious beliefs, political opinions or union memberships, or locations; financial or health data; biometric or genetic data; forms of government identification, such as social security numbers; criminal history)? If so, please provide a description.*
+	- The dataset does not contain data that might be considered offensive in any way.
+16. *Any other comments?*
+	- No other comments.
+
+**Collection process**
+
+1. *How was the data associated with each instance acquired? Was the data directly observable (for example, raw text, movie ratings), reported by subjects (for example, survey responses), or indirectly inferred/derived from other data (for example, part-of-speech tags, model-based guesses for age or language)? If the data was reported by subjects or indirectly inferred/derived from other data, was the data validated/verified? If so, please describe how.*
+	- The data set can be directly observed or gathered from the Statistic Canada official website. 
+2. *What mechanisms or procedures were used to collect the data (for example, hardware apparatuses or sensors, manual human curation, software programs, software APIs)? How were these mechanisms or procedures validated?*
+	- Downloading the csv file from website. 
+3. *If the dataset is a sample from a larger set, what was the sampling strategy (for example, deterministic, probabilistic with specific sampling probabilities)?*
+	- This data set is not a sample from a larger population. 
+4. *Who was involved in the data collection process (for example, students, crowdworkers, contractors) and how were they compensated (for example, how much were crowdworkers paid)?*
+	- Until 2017, Statistics Canada conducted the Canadian Tobacco, Alcohol and Drugs Survey (CTADS), which collected data on tobacco as well as alcohol and drug use in Canada. In 2019, the Canadian Alcohol and Drugs Survey (CADS) was conducted to collect data on alcohol and drug use independently from the Canadian Tobacco and Nicotine Survey (CTNS) which was conducted to primarily collect data on tobacco and nicotine.
+5. *Over what timeframe was the data collected? Does this timeframe match the creation timeframe of the data associated with the instances (for example, recent crawl of old news articles)? If not, please describe the timeframe in which the data associated with the instances was created.*
+	- The data is collected from 2020-12-08 to 2021-01-16. 
+6. *Were any ethical review processes conducted (for example, by an institutional review board)? If so, please provide a description of these review processes, including the outcomes, as well as a link or other access point to any supporting documentation.*
+	- No.
+7. *Did you collect the data from the individuals in question directly, or obtain it via third parties or other sources (for example, websites)?*
+	- Data is collected from individuals through electronic questionnaires and telephone interviews. 
+8. *Were the individuals in question notified about the data collection? If so, please describe (or show with screenshots or other information) how notice was provided, and provide a link or other access point to, or otherwise reproduce, the exact language of the notification itself.*
+	- Yes. 
+9. *Did the individuals in question consent to the collection and use of their data? If so, please describe (or show with screenshots or other information) how consent was requested and provided, and provide a link or other access point to, or otherwise reproduce, the exact language to which the individuals consented.*
+	- No.
+10. *If consent was obtained, were the consenting individuals provided with a mechanism to revoke their consent in the future or for certain uses? If so, please provide a description, as well as a link or other access point to the mechanism (if appropriate).*
+	- Consent was not obtained.
+11. *Has an analysis of the potential impact of the dataset and its use on data subjects (for example, a data protection impact analysis) been conducted? If so, please provide a description of this analysis, including the outcomes, as well as a link or other access point to any supporting documentation.*
+	- No.
+12. *Any other comments?*
+	- No.
+
+**Preprocessing/cleaning/labeling**
+
+1. *Was any preprocessing/cleaning/labeling of the data done (for example, discretization or bucketing, tokenization, part-of-speech tagging, SIFT feature extraction, removal of instances, processing of missing values)? If so, please provide a description. If not, you may skip the remaining questions in this section.*
+	- The data is cleaned, and some labels are changed. 
+2. *Was the "raw" data saved in addition to the preprocessed/cleaned/labeled data (for example, to support unanticipated future uses)? If so, please provide a link or other access point to the "raw" data.*
+	- https://www150.statcan.gc.ca/n1/pub/13-25-0001/132500012021001-eng.htm
+3. *Is the software that was used to preprocess/clean/label the data available? If so, please provide a link or other access point.*
+	- R was usd.
+4. *Any other comments?*
+	- No.
+
+**Uses**
+
+1. *Has the dataset been used for any tasks already? If so, please provide a description.*
+	- No.
+2. *Is there a repository that links to any or all papers or systems that use the dataset? If so, please provide a link or other access point.*
+	- No.
+3. *What (other) tasks could the dataset be used for?*
+	- Further research on tobacco and nicotine usages. 
+4. *Is there anything about the composition of the dataset or the way it was collected and preprocessed/cleaned/labeled that might impact future uses? For example, is there anything that a dataset consumer might need to know to avoid uses that could result in unfair treatment of individuals or groups (for example, stereotyping, quality of service issues) or other risks or harms (for example, legal risks, financial harms)? If so, please provide a description. Is there anything a dataset consumer could do to mitigate these risks or harms?*
+	- The data set is only used for STA304 final paper, which is this task. 
+5. *Are there tasks for which the dataset should not be used? If so, please provide a description.*
+	- No.
+6. *Any other comments?*
+	- No other comments.
+
+**Distribution**
+
+1. *Will the dataset be distributed to third parties outside of the entity (for example, company, institution, organization) on behalf of which the dataset was created? If so, please provide a description.*
+	- No.
+2. *How will the dataset be distributed (for example, tarball on website, API, GitHub)? Does the dataset have a digital object identifier (DOI)?*
+	- The dataset will not be distributed.
+3. *When will the dataset be distributed?*
+	- The dataset will not be distributed.
+4. *Will the dataset be distributed under a copyright or other intellectual property (IP) license, and/or under applicable terms of use (ToU)? If so, please describe this license and/ or ToU, and provide a link or other access point to, or otherwise reproduce, any relevant licensing terms or ToU, as well as any fees associated with these restrictions.*
+	- No.
+5. *Have any third parties imposed IP-based or other restrictions on the data associated with the instances? If so, please describe these restrictions, and provide a link or other access point to, or otherwise reproduce, any relevant licensing terms, as well as any fees associated with these restrictions.*
+	- No.
+6. *Do any export controls or other regulatory restrictions apply to the dataset or to individual instances? If so, please describe these restrictions, and provide a link or other access point to, or otherwise reproduce, any supporting documentation.*
+	- No.
+7. *Any other comments?*
+	- No.
+
+**Maintenance**
+
+1. *Who will be supporting/hosting/maintaining the dataset?*
+	- The dataset will not be maintained.
+2. *How can the owner/curator/manager of the dataset be contacted (for example, email address)?*
+	- N/A
+3. *Is there an erratum? If so, please provide a link or other access point.*
+	- No.
+4. *Will the dataset be updated (for example, to correct labeling errors, add new instances, delete instances)? If so, please describe how often, by whom, and how updates will be communicated to dataset consumers (for example, mailing list, GitHub)?*
+	- The dataset will not be updated.
+5. *If the dataset relates to people, are there applicable limits on the retention of the data associated with the instances (for example, were the individuals in question told that their data would be retained for a fixed period of time and then deleted)? If so, please describe these limits and explain how they will be enforced.*
+	- N/A
+6. *Will older versions of the dataset continue to be supported/hosted/maintained? If so, please describe how. If not, please describe how its obsolescence will be communicated to dataset consumers.*
+	- N/A
+7. *If others want to extend/augment/build on/contribute to the dataset, is there a mechanism for them to do so? If so, please provide a description. Will these contributions be validated/verified? If so, please describe how. If not, why not? Is there a process for communicating/distributing these contributions to dataset consumers? If so, please provide a description.*
+	- N/A
+8. *Any other comments?*
+	- No.
 
 
 \newpage
