@@ -1,7 +1,7 @@
 # starter_folder
 
-This report aims to discuss the demographic characteristics of Toronto, based on NHS data. 
+This report aims to discuss the public use of cigarettes, vaping and cannabis in Canada based on the data collected in the national Canadian Tobacco and Nicotine Survey (CTNS).
 
-The dataset used is publicly available through the Open Data Portal hosted by the City of Toronto. This dataset is part of a voluntary National Household Survey (NHS) by Statistics Canada. It can be accessed through the R package ‘opendatatoronto’ via API, and the package number is “9ef4b82b-bd63-4c6b-b87b-7bd04f2a2fd3" (Gelfand 2020). 
+The dataset used is publicly available through the Stastistics Canada Public Use Microdata File (PUMF), which is on official website of Statistics Canada. The CTNS PUMF is for users who prefer to do their own analysis by focusing on specific sub-groups in the population or by cross-classifying variables. The data is available in HTML, PDF, EFT, and Database format. 
 
-Data and description can be found at: https://open.toronto.ca/dataset/wellbeing-toronto-demographics-nhs-indicators/. 
+Data and description can be found at: https://www150.statcan.gc.ca/n1/pub/13-25-0001/132500012021001-eng.htm.
